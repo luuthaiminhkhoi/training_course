@@ -1,0 +1,11 @@
+{% extends "header.html" %}
+
+{% block body %}
+<h4>Delete Information</h4>
+		<br>
+		{% from "_formhelpers.html" import render_field %}
+     	<form method=post action="/delete" enctype="multipart/form-data">
+     	{{render_field(form.ID)}}
+     	<input type="submit" value="Delete">
+		</form>
+{% endblock %}
