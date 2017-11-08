@@ -1,0 +1,12 @@
+{% extends "header.html" %}
+{% block body %}
+<h4>Edit Information</h4>
+		{% from "_formhelpers.html" import render_field %}
+     	<form method=post action="/edit" enctype="multipart/form-data">
+     			{{render_field(form.stuid)}}
+				{{render_field(form.name)}}
+				{{render_field(form.gender)}}
+				{{render_field(form.phone)}}
+     	<input type="submit" value="Edit">
+		</form>
+{% endblock %}

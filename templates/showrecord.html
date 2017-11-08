@@ -11,6 +11,7 @@
      			<th>Full Name</th>
      			<th>Gender</th>
      			<th>Phone</th>
+                <th>Avatar Link</th>
      		</tr>
      	</thead>
      	<tbody> 
@@ -20,11 +21,15 @@
              <td>{{row[1]}}</td>
              <td>{{row[2]}}</td>
              <td>{{row[3]}}</td>
+             <td>{{row[4]}}</td>
+             <td><img src="{{row[4]}}" height="42" width="42"></img></td>
            </tr>
          {% endfor %}
          </tbody>
         </table>
         <a href="/delete"><button type="button"><span class="glyphicon glyphicon-off" aria-hidden="true"></span> Delete An Information
+        </button></a>
+        <a href="/edit"><button type="button"><span class="glyphicon glyphicon-off" aria-hidden="true"></span> Edit An Information
         </button></a>
      </div>
 </body>
