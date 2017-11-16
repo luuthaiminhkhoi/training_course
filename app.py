@@ -5,18 +5,25 @@ from MySQLdb import escape_string as thwart
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from werkzeug import secure_filename
-import gc, os
+from werkzeug.contrib.cache import SimpleCache
+from flask_caching import Cache
+import gc, os, random
 
 #gc = garbage collector
 #os = using operating system dependent functionality
+
+CACHE_TIMEOUT = 600
 
 app = Flask(__name__)
 app.secret_key = "super secret key"
 
 UPLOAD_FOLDER = 'static/img'
-ALLOWED_EXTENSIONS = set(['txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif'])
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif'])
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config["CACHE_TYPE"] = "simple"
+
+app.cache = Cache(app)
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -92,8 +99,11 @@ def record_page():
 		return(str(e))
 
 @app.route('/showrecord', methods=['GET', 'POST'])
+@app.cache.cached(timeout=50,key_prefix="hello")
 def showrecord():
+	a=random.randint(0,100)
 	try:
+		flash(a)
 		c, conn = connection()
 
 		c.execute('SELECT stu_id,name,gender,phone,avatar FROM student')
@@ -155,6 +165,7 @@ def edit():
 		return render_template("edit.html", form=form)
 	except Exception as e:
 		return(str(e))
+
 @app.route('/')
 def homepage():
     return render_template("main.html")
