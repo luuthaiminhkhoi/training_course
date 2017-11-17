@@ -1,12 +1,13 @@
 from flask import Flask, render_template, flash, request, url_for, redirect, session
 from dbconnect import connection
-from wtforms import Form, TextField, validators, FloatField, SubmitField
+from wtforms import Form, TextField, validators, FloatField, SubmitField, PasswordField
 from MySQLdb import escape_string as thwart
 from flask_wtf.file import FileField, FileRequired, FileAllowed
 from flask_uploads import UploadSet, IMAGES, configure_uploads
 from werkzeug import secure_filename
 from werkzeug.contrib.cache import SimpleCache
 from flask_caching import Cache
+from passlib.hash import sha256_crypt
 import gc, os, random
 
 #gc = garbage collector
@@ -47,6 +48,13 @@ class RecordForm(Form):
 	gender = TextField('Gender', [validators.Length(min=3, max = 7)])
 	phone = TextField('Phone', [validators.Length(min=10, max = 15)])
 
+class RegistrationForm(Form):
+    username = TextField('Username', [validators.Length(min=4, max=20)])
+    password = PasswordField('New Password', [
+        validators.Required(),
+        validators.EqualTo('confirm', message='Passwords must match')
+    ])
+    confirm = PasswordField('Repeat Password')
 
 @app.route('/upload', methods=['GET', 'POST'])
 def upload_file():
@@ -97,6 +105,43 @@ def record_page():
 		return render_template("record.html", form=form)
 	except Exception as e:
 		return(str(e))
+
+@app.route('/register/', methods=["GET","POST"])
+def register_page():
+    try:
+        form = RegistrationForm(request.form)
+
+        if request.method == "POST" and form.validate():
+            username  = form.username.data
+            password = sha256_crypt.encrypt((str(form.password.data)))
+            c, conn = connection()
+
+            x = c.execute("SELECT * FROM users WHERE username = (%s)",
+                          (thwart(username)))
+
+            if int(x) > 0:
+                flash("That username is already taken, please choose another")
+                return render_template('register.html', form=form)
+
+            else:
+                c.execute("INSERT INTO users (username, password) VALUES (%s, %s)",
+                          (thwart(username), thwart(password)))
+                
+                conn.commit()
+                flash("Thanks for registering!")
+                c.close()
+                conn.close()
+                gc.collect()
+
+                session['logged_in'] = True
+                session['username'] = username
+
+                return render_template("main.html")
+
+        return render_template("register.html", form=form)
+
+    except Exception as e:
+        return(str(e))
 
 @app.route('/showrecord', methods=['GET', 'POST'])
 @app.cache.cached(timeout=50,key_prefix="hello")
@@ -165,6 +210,44 @@ def edit():
 		return render_template("edit.html", form=form)
 	except Exception as e:
 		return(str(e))
+
+@app.route('/login/', methods=["GET","POST"])
+def login_page():
+    error = ''
+    try:
+        c, conn = connection()
+        if request.method == "POST":
+
+            data = c.execute("SELECT * FROM users WHERE username = (%s)",
+                             thwart(request.form['username']))
+            
+            data = c.fetchone()[2]
+
+            if sha256_crypt.verify(request.form['password'], data):
+                session['logged_in'] = True
+                session['username'] = request.form['username']
+
+                flash("You are now logged in")
+                return redirect(url_for("homepage"))
+
+            else:
+                error = "Invalid username or password, try again."
+
+        gc.collect()
+
+        return render_template("login.html", error=error)
+
+    except Exception as e:
+        #flash(e)
+        error = "Invalid username or password, try again."
+        return render_template("login.html", error = error)  
+
+@app.route("/logout/")
+def logout():
+    session.clear()
+    flash("You have been logged out!")
+    gc.collect()
+    return redirect(url_for('homepage'))
 
 @app.route('/')
 def homepage():
