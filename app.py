@@ -116,16 +116,14 @@ def register_page():
             password = sha256_crypt.encrypt((str(form.password.data)))
             c, conn = connection()
 
-            x = c.execute("SELECT * FROM users WHERE username = (%s)",
-                          (thwart(username)))
+            x = c.execute("SELECT * FROM users WHERE username = (%s)", (username,))
 
             if int(x) > 0:
                 flash("That username is already taken, please choose another")
                 return render_template('register.html', form=form)
 
             else:
-                c.execute("INSERT INTO users (username, password) VALUES (%s, %s)",
-                          (thwart(username), thwart(password)))
+                c.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (thwart(username), thwart(password)))
                 
                 conn.commit()
                 flash("Thanks for registering!")
@@ -166,7 +164,7 @@ def delete():
 		if request.method == "POST" and form.validate():
 			ID = form.ID.data
 			c, conn = connection()
-			x = c.execute("SELECT * FROM student WHERE stu_id = (%s)", (thwart(ID)))
+			x = c.execute("SELECT * FROM student WHERE stu_id = (%s)", (ID,))
 			#Search ID in database
 			if int(x) == 0:
 				flash("StudentID is Not Valid")
@@ -195,7 +193,7 @@ def edit():
 
 			c, conn = connection()
 
-			x = c.execute("SELECT * FROM student WHERE stu_id = (%s)", (thwart(stuid)))
+			x = c.execute("SELECT * FROM student WHERE stu_id = (%s)", (stuid,))
 
 			if int(x) == 0:
 				flash("StudentID is Not Valid")
@@ -218,8 +216,7 @@ def login_page():
         c, conn = connection()
         if request.method == "POST":
 
-            data = c.execute("SELECT * FROM users WHERE username = (%s)",
-                             thwart(request.form['username']))
+            data = c.execute("SELECT * FROM users WHERE username = (%s)", (request.form['username'],))
             
             data = c.fetchone()[2]
 
